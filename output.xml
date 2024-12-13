@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 7.1.1 (Python 3.13.0 on win32)" generated="2024-12-05T18:00:16.462702" rpa="false" schemaversion="5">
+<suite id="s1" name="Login" source="C:\Users\mikot\Desktop\testlogin\login.robot">
+<test id="s1-t1" name="Valid Login Test" line="15">
+<kw name="Open Browser" owner="SeleniumLibrary">
+<msg time="2024-12-05T18:00:16.714691" level="INFO">Opening browser 'firefox' to base url 'http://regis.rmutto.ac.th/registrar/home.asp'.</msg>
+<arg>${URL}</arg>
+<arg>${BROWSER}</arg>
+<doc>Opens a new browser instance to the optional ``url``.</doc>
+<status status="PASS" start="2024-12-05T18:00:16.714483" elapsed="8.401737"/>
+</kw>
+<kw name="Maximize Browser Window" owner="SeleniumLibrary">
+<doc>Maximizes current browser window.</doc>
+<status status="PASS" start="2024-12-05T18:00:25.117028" elapsed="0.284898"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2024-12-05T18:00:25.404362" level="INFO">Clicking element 'xpath=/html/body/table/tbody/tr[1]/td[1]/table/tbody/tr[4]/td/a'.</msg>
+<arg>xpath=/html/body/table/tbody/tr[1]/td[1]/table/tbody/tr[4]/td/a</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2024-12-05T18:00:25.402761" elapsed="1.642510"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2024-12-05T18:00:27.045944" level="INFO">Typing text '026530461019-8' into text field 'xpath=/html/body/table/tbody/tr[1]/td[3]/form/div/table[2]/tbody/tr[1]/td[4]/input'.</msg>
+<arg>xpath=/html/body/table/tbody/tr[1]/td[3]/form/div/table[2]/tbody/tr[1]/td[4]/input</arg>
+<arg>${VALID_USERNAME}</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2024-12-05T18:00:27.045656" elapsed="0.043465"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<msg time="2024-12-05T18:00:27.090120" level="INFO">Typing text '1102700828213' into text field 'xpath=/html/body/table/tbody/tr[1]/td[3]/form/div/table[2]/tbody/tr[2]/td[2]/input[1]'.</msg>
+<arg>xpath=/html/body/table/tbody/tr[1]/td[3]/form/div/table[2]/tbody/tr[2]/td[2]/input[1]</arg>
+<arg>${VALID_PASSWORD}</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="PASS" start="2024-12-05T18:00:27.089708" elapsed="0.018209"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2024-12-05T18:00:27.108738" level="INFO">Clicking element 'xpath=/html/body/table/tbody/tr[1]/td[3]/form/div/table[2]/tbody/tr[3]/td[2]/font/input'.</msg>
+<arg>xpath=/html/body/table/tbody/tr[1]/td[3]/form/div/table[2]/tbody/tr[3]/td[2]/font/input</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2024-12-05T18:00:27.108510" elapsed="1.800549"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2024-12-05T18:00:28.909670" level="INFO">Clicking element 'xpath=/html/body/table/tbody/tr[1]/td[1]/table/tbody/tr[6]/td/a'.</msg>
+<arg>xpath=/html/body/table/tbody/tr[1]/td[1]/table/tbody/tr[6]/td/a</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2024-12-05T18:00:28.909467" elapsed="2.187012"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<msg time="2024-12-05T18:00:31.096991" level="INFO">Clicking element 'xpath=/html/body/table/tbody/tr[1]/td[3]/div/table[2]/tbody/tr/td/table/tbody/tr[2]/td[1]/a'.</msg>
+<arg>xpath=/html/body/table/tbody/tr[1]/td[3]/div/table[2]/tbody/tr/td/table/tbody/tr[2]/td[1]/a</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="PASS" start="2024-12-05T18:00:31.096805" elapsed="0.028159"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<msg time="2024-12-05T18:00:34.126797" level="INFO">Slept 3 seconds.</msg>
+<arg>3s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="PASS" start="2024-12-05T18:00:31.125533" elapsed="3.001822"/>
+</kw>
+<kw name="Open Browser" owner="SeleniumLibrary">
+<msg time="2024-12-05T18:00:34.132000" level="INFO">Opening browser 'firefox' to base url 'https://the-internet.herokuapp.com/upload'.</msg>
+<arg>${SECOND_URL}</arg>
+<arg>${BROWSER}</arg>
+<doc>Opens a new browser instance to the optional ``url``.</doc>
+<status status="PASS" start="2024-12-05T18:00:34.131326" elapsed="9.230759"/>
+</kw>
+<kw name="Maximize Browser Window" owner="SeleniumLibrary">
+<doc>Maximizes current browser window.</doc>
+<status status="PASS" start="2024-12-05T18:00:43.362689" elapsed="0.273998"/>
+</kw>
+<kw name="Get File With Most Recent Timestamp">
+<kw name="List Files In Directory" owner="OperatingSystem">
+<msg time="2024-12-05T18:00:43.638272" level="INFO" html="true">Listing contents of directory '&lt;a href="file://C:\Users\mikot\Downloads"&gt;C:\Users\mikot\Downloads&lt;/a&gt;'.</msg>
+<msg time="2024-12-05T18:00:43.642937" level="INFO">55 files:
+1714097293723-removebg-preview.png
+1714097293723.png
+220325case013.jpg
+360_F_305215792_mNh2pLpiEIcC5zQ0XENIIDGfJ9BWoqdQ.jpg
+96633009-d1818000-1318-11eb-9f1d-7f914f4ccb16.gif
+AI_week06(1).ipynb
+AI_week06.ipynb
+AI_week07.ipynb
+AutoClicker-3.0.exe
+AutoHotkey_1.1.37.02_setup.exe
+DM-02-1(1).ipynb
+DM-02-1.ipynb
+DM-02-2(1).ipynb
+DM-02-2.ipynb
+EpicInstaller-15.17.1-unrealEngine.msi
+Fisch Macro V11.ahk
+Fisch Macro V12.ahk
+HoYoPlay_install_ua_d9826cea1242.exe
+HunterPie-2645-1-0-5-1697608499.zip
+LineInst.exe
+MuMuInstaller_3.1.7.0_gw-overseas12_all_1712735105.exe
+NationalGeographic_1468962_16x9.avif
+Postman-win64-Setup.exe
+RAMMap.zip
+RobloxPlayerInstaller.exe
+UnityHubSetup.exe
+VSCodeUserSetup-x64-1.95.3.exe
+_9011-Article Text-23840-26676-10-20170705-1.pdf
+_9011-Article Text-23840-26676-10-20170705.pdf
+aa.pdf
+bi_sale.pbix
+customer.csv
+customer.xlsx
+desktop.ini
+geckodriver-v0.35.0-win64.zip
+images.jpg
+labels_my-project-name_2024-12-04-01-50-29.zip
+labels_my-project-name_2024-12-04-11-19-33.zip
+mysql-installer-web-community-8.0.40.0.msi
+oykhqlade5u9Chn2MjB-o.gif
+png-clipart-rajamangala-university-of-technology-isan-rajamangala-university-of-technology-phra-nakhon-rajamangala-university-of-technology-lanna-student.png
+python-3.13.0-amd64(1).exe
+python-3.13.0-amd64.exe
+shopdee.sql
+tinytask.exe
+tinytask.ini
+voucherid=1999450-1.pdf
+voucherid=1999450-2.pdf
+voucherid=1999450-3.pdf
+voucherid=1999450-4.pdf
+voucherid=1999450.pdf
+ข้อมูลการขายสินค้า.xlsx
+ดีไซน์ที่ยังไม่ได้ตั้งชื่อ.pdf
+ตัวอย่าง บันทึกข้อความ ขออนุญาตจัดกิจกรรม.png
+ฟ.pdf</msg>
+<msg time="2024-12-05T18:00:43.643265" level="INFO">@{files} = [ 1714097293723-removebg-preview.png | 1714097293723.png | 220325case013.jpg | 360_F_305215792_mNh2pLpiEIcC5zQ0XENIIDGfJ9BWoqdQ.jpg | 96633009-d1818000-1318-11eb-9f1d-7f914f4ccb16.gif | AI_week06(1).i...</msg>
+<var>@{files}</var>
+<arg>${folder}</arg>
+<doc>Wrapper for `List Directory` that returns only files.</doc>
+<status status="PASS" start="2024-12-05T18:00:43.638095" elapsed="0.005235"/>
+</kw>
+<kw name="Run Keyword And Return" owner="BuiltIn">
+<kw name="Get Latest File From List">
+<msg time="2024-12-05T18:00:43.645959" level="FAIL">Keyword 'Get Latest File From List' missing named-only argument 'folder'.</msg>
+<arg>${files}</arg>
+<arg>${folder}</arg>
+<status status="FAIL" start="2024-12-05T18:00:43.645285" elapsed="0.000802">Keyword 'Get Latest File From List' missing named-only argument 'folder'.</status>
+</kw>
+<msg time="2024-12-05T18:00:43.646305" level="INFO">Returning from the enclosing user keyword.</msg>
+<var>${latest_file}</var>
+<arg>Get Latest File From List</arg>
+<arg>${files}</arg>
+<arg>${folder}</arg>
+<doc>Runs the specified keyword and returns from the enclosing user keyword.</doc>
+<status status="FAIL" start="2024-12-05T18:00:43.644021" elapsed="0.002444"/>
+</kw>
+<return>
+<value>${latest_file}</value>
+<status status="NOT RUN" start="2024-12-05T18:00:43.646703" elapsed="0.000145"/>
+</return>
+<var>${latest_file}</var>
+<arg>${DOWNLOAD_FOLDER}</arg>
+<status status="FAIL" start="2024-12-05T18:00:43.637570" elapsed="0.009662">Keyword 'Get Latest File From List' missing named-only argument 'folder'.</status>
+</kw>
+<kw name="Log" owner="BuiltIn">
+<arg>Latest downloaded file: ${latest_file}</arg>
+<doc>Logs the given message with the given level.</doc>
+<status status="NOT RUN" start="2024-12-05T18:00:43.648547" elapsed="0.000048"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<arg>xpath=//*[@id="file-upload"]</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="NOT RUN" start="2024-12-05T18:00:43.648987" elapsed="0.000119"/>
+</kw>
+<kw name="Input Text" owner="SeleniumLibrary">
+<arg>xpath=//input[@type='file']</arg>
+<arg>${latest_file}</arg>
+<doc>Types the given ``text`` into the text field identified by ``locator``.</doc>
+<status status="NOT RUN" start="2024-12-05T18:00:43.649463" elapsed="0.000037"/>
+</kw>
+<kw name="Click Element" owner="SeleniumLibrary">
+<arg>xpath=//*[@id="file-submit"]</arg>
+<doc>Click the element identified by ``locator``.</doc>
+<status status="NOT RUN" start="2024-12-05T18:00:43.649836" elapsed="0.000037"/>
+</kw>
+<kw name="Sleep" owner="BuiltIn">
+<arg>5s</arg>
+<doc>Pauses the test executed for the given time.</doc>
+<status status="NOT RUN" start="2024-12-05T18:00:43.650161" elapsed="0.000035"/>
+</kw>
+<kw name="Close Browser" owner="SeleniumLibrary">
+<doc>Closes the current browser.</doc>
+<status status="NOT RUN" start="2024-12-05T18:00:43.650807" elapsed="0.000038"/>
+</kw>
+<doc>เข้าสู่ระบบเพื่อโหลดไฟล์</doc>
+<tag>test</tag>
+<status status="FAIL" start="2024-12-05T18:00:16.713264" elapsed="26.937958">Keyword 'Get Latest File From List' missing named-only argument 'folder'.</status>
+</test>
+<doc>Login Test Suite</doc>
+<status status="FAIL" start="2024-12-05T18:00:16.464401" elapsed="27.188423"/>
+</suite>
+<statistics>
+<total>
+<stat pass="0" fail="1" skip="0">All Tests</stat>
+</total>
+<tag>
+<stat pass="0" fail="1" skip="0">test</stat>
+</tag>
+<suite>
+<stat pass="0" fail="1" skip="0" id="s1" name="Login">Login</stat>
+</suite>
+</statistics>
+<errors>
+<msg time="2024-12-05T18:00:16.452886" level="WARN">Error in file 'C:\Users\mikot\Desktop\testlogin\login.robot' on line 49: The '[Return]' setting is deprecated. Use the 'RETURN' statement instead.</msg>
+<msg time="2024-12-05T18:00:16.458500" level="WARN">Error in file 'C:\Users\mikot\Desktop\testlogin\login.robot' on line 60: The '[Return]' setting is deprecated. Use the 'RETURN' statement instead.</msg>
+</errors>
+</robot>
