@@ -57,51 +57,47 @@ try:
     new_page_button.click()
     time.sleep(5)
 
-    rows = driver.find_elements("xpath", '//tr')
-    for row in rows:
-        if "นางสาวต้องใจ แย้มผกา" in row.text.strip():
-            button = row.find_element("xpath", './/a')
-            button.click()
-            break
+    downloaded_pdfs = set()  # ใช้บันทึก URL ของไฟล์ที่ดาวน์โหลดแล้ว
 
-    time.sleep(10)
+    while True:  # วนลูปเพื่อตรวจสอบข้อมูลใหม่
+        print("กำลังตรวจสอบข้อมูลใหม่...")
+        try:
+            # 4️⃣ ค้นหาแถวที่มีชื่อ "นางสาวต้องใจ แย้มผกา"
+            rows = driver.find_elements("xpath", '//tr')  # ดึงทุกแถวในตาราง
+            found_new_data = False  # ติดตามว่าพบข้อมูลใหม่หรือไม่
 
-        # 7️⃣ สลับไปยังหน้าต่างใหม่ (ถ้ามี)
-    windows = driver.window_handles
-    for w in windows:
-        driver.switch_to.window(w)
-        if "documentDetail.aspx" in driver.current_url:
-            print("สลับไปยังหน้าต่างใหม่สำเร็จ!")
-            break
-    time.sleep(5)
+            for row in rows:
+                if "นางสาวต้องใจ แย้มผกา" in row.text:  # ตรวจสอบข้อความในแถว
+                    print(f"พบข้อมูลจาก: {row.text}")
 
-    downloaded_pdfs = set()
+                    # 5️⃣ ค้นหาลิงก์ PDF ในแถวที่ตรงกับชื่อ
+                    pdf_links = row.find_elements("xpath", './/a[contains(@href, "DocumentGenerateFile.ashx")]')
+                    print(f"พบลิงก์ PDF ในแถวนี้: {len(pdf_links)}")
 
-    # 4️⃣ ค้นหาแถวที่มีชื่อ "นางสาวต้องใจ แย้มผกา"
-    rows = driver.find_elements("xpath", '//tr')  # ดึงทุกแถวในตาราง
-    for row in rows:
-        if "นางสาวต้องใจ แย้มผกา" in row.text:  # ตรวจสอบข้อความในแถว
-            print(f"พบแถวที่มีชื่อ: {row.text}")
+                    # 6️⃣ ดาวน์โหลดไฟล์ PDF ทีละลิงก์
+                    for index, pdf_link in enumerate(pdf_links):
+                        pdf_url = pdf_link.get_attribute('href')  # ดึง URL ของไฟล์ PDF
+                        if pdf_url not in downloaded_pdfs:  # ตรวจสอบว่าไฟล์ถูกดาวน์โหลดหรือยัง
+                            try:
+                                print(f"กำลังกดลิงก์ PDF ที่ {index + 1}: {pdf_url}")
+                                pdf_link.click()  # คลิกลิงก์ PDF
+                                downloaded_pdfs.add(pdf_url)  # บันทึกสถานะการดาวน์โหลด
+                                found_new_data = True
+                                time.sleep(5)  # รอให้ดาวน์โหลดเสร็จ
+                            except Exception as e:
+                                print(f"ไม่สามารถดาวน์โหลดไฟล์ PDF ที่ {index + 1}: {e}")
+                        else:
+                            print(f"ลิงก์ PDF นี้ถูกดาวน์โหลดไปแล้ว: {pdf_url}")
 
-            # 5️⃣ ค้นหาลิงก์ PDF ในแถวที่ตรงกับชื่อ
-            pdf_links = row.find_elements("xpath", './/a[contains(@href, "DocumentGenerateFile.ashx")]')
-            print(f"พบลิงก์ PDF ในแถวนี้: {len(pdf_links)}")
+            if not found_new_data:
+                print("ยังไม่มีข้อมูลใหม่... รอ 10 วินาที")
+                time.sleep(10)  # รอ 10 วินาทีแล้วตรวจสอบใหม่
+            else:
+                print("ดาวน์โหลดไฟล์ใหม่สำเร็จ!")
 
-            # 6️⃣ ดาวน์โหลดไฟล์ PDF ทีละลิงก์
-            for index, pdf_link in enumerate(pdf_links):
-                pdf_url = pdf_link.get_attribute('href')  # ดึง URL ของไฟล์ PDF
-                if pdf_url not in downloaded_pdfs:  # ตรวจสอบว่าไฟล์ถูกดาวน์โหลดหรือยัง
-                    try:
-                        print(f"กำลังกดลิงก์ PDF ที่ {index + 1}: {pdf_url}")
-                        pdf_link.click()  # คลิกลิงก์ PDF
-                        downloaded_pdfs.add(pdf_url)  # บันทึกสถานะการดาวน์โหลด
-                        time.sleep(5)  # รอให้ดาวน์โหลดเสร็จ
-                    except Exception as e:
-                        print(f"ไม่สามารถดาวน์โหลดไฟล์ PDF ที่ {index + 1}: {e}")
-                else:
-                    print(f"ลิงก์ PDF นี้ถูกดาวน์โหลดไปแล้ว: {pdf_url}")
-
-    print("ดาวน์โหลดไฟล์ PDF ทีละแถวสำเร็จ!")
+        except Exception as e:
+            print(f"เกิดข้อผิดพลาด: {e}")
+            time.sleep(10)  # รอ 10 วินาทีเพื่อเริ่มต้นใหม่
 
 finally:
     driver.quit()

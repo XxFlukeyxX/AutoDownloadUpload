@@ -1,6 +1,9 @@
 import os
 import re
 import pdfplumber
+import fitz  # PyMuPDF
+from pdf2image import convert_from_path
+import pytesseract
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
@@ -8,60 +11,160 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.firefox import GeckoDriverManager
 import time
+from plyer import notification
 
-# 🛠️ ข้อมูลสำหรับล็อกอิน
+
+# 📧 เข้าสู่ระบบ
 email = "pichai_jo"
 password = "CSautomation"
 
-# 📁 1️⃣ **ค้นหาไฟล์ล่าสุดในโฟลเดอร์**
-def get_latest_file(download_folder):
-    files = [os.path.join(download_folder, f) for f in os.listdir(download_folder) if os.path.isfile(os.path.join(download_folder, f))]
-    if not files:
-        raise Exception("ไม่พบไฟล์ใด ๆ ในโฟลเดอร์ดาวน์โหลด")
-    latest_file = max(files, key=os.path.getctime)
-    latest_file = latest_file.replace("\\", "/")
-    return latest_file
+def show_notification(title, message):
+    notification.notify(
+        title=title,
+        message=message,
+        app_name="PDF Uploader",
+        timeout=10  # ระยะเวลาแสดงแจ้งเตือน (วินาที)
+    )
+
+# 📁 1️⃣ **ค้นหาไฟล์ทั้งหมดในโฟลเดอร์และโฟลเดอร์ย่อย**
+def get_files_in_subfolders(download_folder):
+    files = []
+    for root, dirs, filenames in os.walk(download_folder):
+        for filename in filenames:
+            files.append(os.path.join(root, filename))
+    return files
 
 # 📘 2️⃣ **อ่านข้อมูลจากไฟล์ PDF**
+def extract_pdf_data_with_plumber(pdf_path):
+    try:
+        with pdfplumber.open(pdf_path) as pdf:
+            text = ''.join(page.extract_text(layout=True) or '' for page in pdf.pages)
+        return text
+    except Exception as e:
+        print(f"Error with pdfplumber: {e}")
+        return ""
+
+def extract_pdf_data_with_fitz(pdf_path):
+    try:
+        text = ""
+        with fitz.open(pdf_path) as pdf:
+            for page in pdf:
+                text += page.get_text("text")
+        return text
+    except Exception as e:
+        print(f"Error with PyMuPDF: {e}")
+        return ""
+
+def extract_text_with_ocr(pdf_path):
+    try:
+        pages = convert_from_path(pdf_path)
+        text = ""
+        for page in pages:
+            text += pytesseract.image_to_string(page, lang='tha')
+        return text
+    except Exception as e:
+        print(f"Error with OCR: {e}")
+        return ""
+
 def extract_pdf_data(pdf_path):
-    with pdfplumber.open(pdf_path) as pdf:
-        text = ''
-        for page in pdf.pages:
-            text += page.extract_text()
-    text = text.replace("", "้").replace("אָ", "า")
+    # ลองใช้ pdfplumber ก่อน
+    text = extract_pdf_data_with_plumber(pdf_path)
+    if not text.strip():
+        print("ลองใช้ PyMuPDF")
+        text = extract_pdf_data_with_fitz(pdf_path)
+    if not text.strip():
+        print("ลองใช้ OCR")
+        text = extract_text_with_ocr(pdf_path)
     return text
 
+# 📅 3️⃣ **ดึงวันที่จาก PDF และแปลงเลขไทยเป็น ค.ศ.**
+def extract_thai_date(pdf_data):
+    thai_months = {
+        "มกราคม": "01", "กุมภาพันธ์": "02", "มีนาคม": "03", "เมษายน": "04",
+        "พฤษภาคม": "05", "มิถุนายน": "06", "กรกฎาคม": "07", "สิงหาคม": "08",
+        "กันยายน": "09", "ตุลาคม": "10", "พฤศจิกายน": "11", "ธันวาคม": "12"
+    }
+    try:
+        date_match = re.search(r'(\d{1,2})\s(มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)\s(๒๕\d{2})', pdf_data)
+        if date_match:
+            day, month_thai, year_thai = date_match.groups()
+            day = day.translate(str.maketrans("๐๑๒๓๔๕๖๗๘๙", "0123456789"))
+            year = str(int(year_thai.translate(str.maketrans("๐๑๒๓๔๕๖๗๘๙", "0123456789"))) - 543)
+            month = thai_months[month_thai]
+            return f"{day}/{month}/{year}"
+        return "ไม่พบวันที่"
+    except Exception as e:
+        print(f"Error: {e}")
+        return "ไม่พบวันที่"
+
+# 📅 4️⃣ **ฟังก์ชันเลือกวันที่ใน Date Picker โดยอิงจากวันที่ในเอกสาร**
+def select_date_in_datepicker(driver, day, month, year):
+    # แปลงปีเป็นปี พ.ศ.
+    thai_year = str(int(year) + 543)  # แปลงปี ค.ศ. เป็นปี พ.ศ.
+    thai_months = {
+        "01": "มกราคม", "02": "กุมภาพันธ์", "03": "มีนาคม", "04": "เมษายน",
+        "05": "พฤษภาคม", "06": "มิถุนายน", "07": "กรกฎาคม", "08": "สิงหาคม",
+        "09": "กันยายน", "10": "ตุลาคม", "11": "พฤศจิกายน", "12": "ธันวาคม"
+    }
+    thai_month = thai_months[month]
+
+    # เปิด Date Picker
+    date_input = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_txtDocumentDate"]')
+    date_input.click()
+    time.sleep(1)
+
+    # ตรวจสอบเดือนและปีปัจจุบันในปฏิทิน
+    while True:
+        current_title = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_txtDocumentDatetCalendarExtender_title"]').text
+        if thai_month in current_title and thai_year in current_title:
+            break
+
+        # เลื่อนปฏิทินไปยังเดือนและปีที่ต้องการ
+        if int(year) < int(current_title[-4:]):  # หากปีต้องการน้อยกว่า ให้ย้อนกลับ
+            prev_button = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_txtDocumentDatetCalendarExtender_prevArrow"]')
+            prev_button.click()
+        else:  # หากปีมากกว่า หรือเดือนยังไม่ตรง ให้กดถัดไป
+            next_button = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_txtDocumentDatetCalendarExtender_nextArrow"]')
+            next_button.click()
+        time.sleep(1)
+
+    # เลือกวันที่
+    for row in range(6):
+        for col in range(7):
+            day_xpath = f'//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_txtDocumentDatetCalendarExtender_day_{row}_{col}"]'
+            try:
+                day_element = driver.find_element(By.XPATH, day_xpath)
+                if day_element.text == str(int(day)):
+                    day_element.click()
+                    return
+            except Exception:
+                pass
+    print(f"ไม่พบวันที่: {day}/{month}/{year} ใน Date Picker")
+
 # 📂 **ตั้งค่าโฟลเดอร์ที่เก็บไฟล์**
-download_folder = os.path.expanduser("~/Downloads")
-latest_file = get_latest_file(download_folder)
-print(f"พาธไฟล์ล่าสุด: {latest_file}")
+download_folder = r"C:\Users\mikot\Desktop\test"
+files_in_folder = get_files_in_subfolders(download_folder)
 
-if latest_file.endswith(".pdf"):
+# 📤 5️⃣ **จัดการไฟล์ PDF**
+uploaded_files = []
+pdf_files = [file for file in files_in_folder if file.endswith(".pdf") and file not in uploaded_files]
+
+if pdf_files:
+    latest_file = pdf_files[0]
     pdf_data = extract_pdf_data(latest_file)
-    try:
-        document_name = re.search(r'เรื่อง[:\s]*(.*?)(\n|$)', pdf_data).group(1).strip()
-    except AttributeError:
-        document_name = "ไม่พบชื่อเรื่อง"
 
-    try:
-        document_code = re.search(r'ที่[:\s]*(\S*?/\d+)', pdf_data).group(1).strip()
-    except AttributeError:
-        document_code = "ไม่พบเลขที่เอกสาร"
+    # ดึงข้อมูลสำคัญ
+    document_name = re.search(r'เรื่อง[:\s]*(.*)', pdf_data, re.MULTILINE).group(1).strip() if re.search(r'เรื่อง[:\s]*(.*)', pdf_data, re.MULTILINE) else "ไม่พบชื่อเรื่อง"
+    document_code = re.search(r'ที่\s*พส\.อ\s*.*?\d+', pdf_data).group(0).strip() if re.search(r'ที่\s*พส\.อ\s*.*?\d+', pdf_data) else "ไม่พบเลขที่เอกสาร"
+    impact_name = re.search(r'เรียน[:\s]*(.*)', pdf_data, re.MULTILINE).group(1).strip() if re.search(r'เรียน[:\s]*(.*)', pdf_data, re.MULTILINE) else "ไม่พบชื่อผู้รับ"
+    document_date = extract_thai_date(pdf_data)
 
-    try:
-        impact_name = re.search(r'เรียน[:\s]*(.*?)(\n|$)', pdf_data).group(1).strip()
-    except AttributeError:
-        impact_name = "ไม่พบชื่อผู้รับ"
-else:
-    document_name = "ไม่พบชื่อเรื่อง"
-    document_code = "ไม่พบเลขที่เอกสาร"
-    impact_name = "ไม่พบชื่อผู้รับ"
+    print(f"ชื่อเอกสาร: {document_name}")
+    print(f"เลขที่เอกสาร: {document_code}")
+    print(f"เรียน: {impact_name}")
+    print(f"วันที่เอกสาร: {document_date}")
 
-print(f"ชื่อเอกสาร: {document_name}")
-print(f"เลขที่เอกสาร: {document_code}")
-print(f"เรียน: {impact_name}")
-
-# 📡 3️⃣ **เริ่มต้นกระบวนการ Selenium**
+# 📡 5️⃣ **เริ่มต้นกระบวนการ Selenium**
 service = Service(GeckoDriverManager().install())
 driver = webdriver.Firefox(service=service)
 
@@ -77,12 +180,9 @@ try:
     # รอให้หน้าใหม่โหลด
     time.sleep(2)
 
-    email_input = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_txtEmail"]')
-    email_input.send_keys(email)
-    password_input = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_txtPassword"]')
-    password_input.send_keys(password)
-    login_button = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_bttLogin"]')
-    login_button.click()
+    driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_txtEmail"]').send_keys(email)
+    driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_txtPassword"]').send_keys(password)
+    driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_bttLogin"]').click()
     time.sleep(5)
 
     xpath_notification = '//*[@id="mainContentPlaceHolder_notificationSourceGridViewDocument_postBackUrlLinkButton_0"]'
@@ -106,8 +206,13 @@ try:
     document_code_input = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_txtCodeRef"]')
     document_code_input.send_keys(document_code)
 
-    impact_name_input = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_txtImpactName"]')
-    impact_name_input.send_keys(impact_name)
+    if document_date != "ไม่พบวันที่":
+        day, month, year = document_date.split("/")
+        select_date_in_datepicker(driver, day, month, year)
+    else:
+        print("ไม่พบวันที่ในเอกสาร")
+
+    driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_txtImpactName"]').send_keys(impact_name)
 
     save_button = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_Button2"]')
     save_button.click()
@@ -125,6 +230,7 @@ try:
     sent_directory_add_button.click()
     time.sleep(2)
 
+   
     keyword_input = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentNotebook1_txtKeyword"]')
     keyword_input.send_keys("นางสาวต้องใจ แย้มผกา")
 
@@ -144,38 +250,48 @@ try:
     directory_confirm_button = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentDirectorySentTo1_bttConfirm"]')
     directory_confirm_button.click()
     time.sleep(5)
-    
-    # 🔥 **อัปโหลดไฟล์**
-    try:
-        file_input = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, "//*[@id='mainContentPlaceHolder_eDocumentContentCreate1_AjaxFileUpload1_Html5InputFile']"))
-        )
-        file_path = os.path.abspath(latest_file)
-        print(f"พาธไฟล์ที่จะอัปโหลด: {file_path}")
-        
-        driver.execute_script("arguments[0].scrollIntoView(true);", file_input)  
-        
-        file_input.send_keys(file_path)  
-        print(f"อัปโหลดไฟล์สำเร็จ: {latest_file}")
-        
-        upload_button = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.XPATH, "//*[@id='mainContentPlaceHolder_eDocumentContentCreate1_AjaxFileUpload1_UploadOrCancelButton']"))
-        )
-        upload_button.click()
-        print("คลิกปุ่มอัปโหลดสำเร็จ")
-        
-        save_and_send_button = WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.XPATH, "//*[@id='mainContentPlaceHolder_eDocumentContentCreate1_bttSaveAndSent']"))
-        )
-        save_and_send_button.click()
-        print("คลิกปุ่ม Save and Sent สำเร็จ")
-        
-    except Exception as e:
-        print(f"เกิดข้อผิดพลาดในการอัปโหลดไฟล์หรือคลิกปุ่ม Save and Sent: {e}")
+
+    uploaded_count = 0
+
+    for file_path in pdf_files:
+        if file_path not in uploaded_files:  # ตรวจสอบว่าถูกอัปโหลดแล้วหรือไม่
+            # รอ input file และเคลียร์สถานะก่อนใส่ไฟล์ใหม่
+            file_input = WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, "//*[@id='mainContentPlaceHolder_eDocumentContentCreate1_AjaxFileUpload1_Html5InputFile']")
+                )
+            )
+            driver.execute_script("arguments[0].value = '';", file_input)  # รีเซ็ต input file
+
+            print(f"พาธไฟล์ที่จะอัปโหลด: {file_path}")
+            file_input.send_keys(file_path)  # ใส่ไฟล์ลงใน input
+            time.sleep(5)  # รอให้ระบบประมวลผลไฟล์ก่อนคลิกปุ่มอัปโหลด
+
+            # ใช้ JavaScript เพื่อคลิกปุ่มอัปโหลดแทน
+            upload_button = WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, "//*[@id='mainContentPlaceHolder_eDocumentContentCreate1_AjaxFileUpload1_UploadOrCancelButton']")
+                )
+            )
+            driver.execute_script("arguments[0].scrollIntoView(true);", upload_button)
+            driver.execute_script("arguments[0].click();", upload_button)  # คลิกผ่าน JavaScript
+            print(f"อัปโหลดไฟล์สำเร็จ: {file_path}")
+
+            # เพิ่มไฟล์ที่อัปโหลดแล้วลงในลิสต์
+            uploaded_files.append(file_path)
+            save_uploaded_files(uploaded_files)
+            uploaded_count += 1  # เพิ่มตัวนับไฟล์ที่ถูกอัปโหลดในรอบนี้
 
 except Exception as e:
-    print(f"เกิดข้อผิดพลาด: {e}")
+    print(f"เกิดข้อผิดพลาดในการอัปโหลดไฟล์: {e}")
 
 finally:
-    time.sleep(10)
+    time.sleep(5)
     driver.quit()
+
+    # แสดงการแจ้งเตือนเมื่ออัปโหลดเสร็จสิ้น เฉพาะไฟล์ที่อัปโหลดในครั้งนี้
+    if uploaded_count > 0:
+        show_notification("การอัปโหลดเสร็จสิ้น", f"อัปโหลดไฟล์จำนวน {uploaded_count} ไฟล์เรียบร้อยแล้ว")
+    else:
+        show_notification("การอัปโหลดเสร็จสิ้น", "ไม่มีไฟล์ใหม่ถูกอัปโหลด")
+    print("การอัปโหลดเสร็จสิ้น")

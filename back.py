@@ -11,30 +11,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.firefox import GeckoDriverManager
 import time
-import json
 from plyer import notification
 
 
 # 📧 เข้าสู่ระบบ
 email = "pichai_jo"
 password = "CSautomation"
-
-uploaded_files_record = "uploaded_files.json"
-
-# โหลดรายการไฟล์ที่เคยอัปโหลด
-def load_uploaded_files():
-    if os.path.exists(uploaded_files_record):
-        with open(uploaded_files_record, "r", encoding="utf-8") as f:
-            return set(json.load(f))  # โหลดเป็นเซ็ต
-    return set()
-
-# บันทึกรายการไฟล์ที่อัปโหลด
-def save_uploaded_file(file_path):
-    uploaded_files = load_uploaded_files()  # โหลดไฟล์เดิม
-    uploaded_files.add(file_path)  # เพิ่มไฟล์ใหม่
-    with open(uploaded_files_record, "w", encoding="utf-8") as f:
-        json.dump(list(uploaded_files), f, ensure_ascii=False, indent=4)  # บันทึกเป็น JSON
-    print(f"บันทึกไฟล์ JSON เสร็จสิ้นที่: {os.path.abspath(uploaded_files_record)}")
 
 def show_notification(title, message):
     notification.notify(
@@ -164,13 +146,11 @@ download_folder = r"C:\Users\mikot\Desktop\test"
 files_in_folder = get_files_in_subfolders(download_folder)
 
 # 📤 5️⃣ **จัดการไฟล์ PDF**
-uploaded_files = load_uploaded_files()  # โหลดรายการไฟล์ที่เคยอัปโหลด
-
-# กรองเฉพาะไฟล์ที่ยังไม่ได้อัปโหลด
+uploaded_files = []
 pdf_files = [file for file in files_in_folder if file.endswith(".pdf") and file not in uploaded_files]
 
 if pdf_files:
-    latest_file = pdf_files[0]  # ดึงไฟล์ใหม่ล่าสุดที่ยังไม่ได้อัปโหลด
+    latest_file = pdf_files[0]
     pdf_data = extract_pdf_data(latest_file)
 
     # ดึงข้อมูลสำคัญ
@@ -272,54 +252,40 @@ try:
     directory_confirm_button.click()
     time.sleep(5)
 
-    uploaded_files = load_uploaded_files()  # โหลดรายการไฟล์ที่เคยอัปโหลด
-
     uploaded_count = 0
 
-
-    for file_path in pdf_files:  # วนลูปไฟล์ทั้งหมดใน pdf_files
-        # ข้ามไฟล์ที่เคยอัปโหลด
-        if file_path in uploaded_files:
-            print(f"ข้ามไฟล์ที่เคยอัปโหลด: {file_path}")
-            continue
-
-        try:
-            # รอ input file และเคลียร์สถานะก่อนใส่ไฟล์ใหม่
-            file_input = WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located(
-                    (By.XPATH, "//*[@id='mainContentPlaceHolder_eDocumentContentCreate1_AjaxFileUpload1_Html5InputFile']")
+    for file_path in pdf_files:
+            try:
+        # รอ input file และเคลียร์สถานะก่อนใส่ไฟล์ใหม่
+                file_input = WebDriverWait(driver, 20).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, "//*[@id='mainContentPlaceHolder_eDocumentContentCreate1_AjaxFileUpload1_Html5InputFile']")
+                    )
                 )
-            )
-            driver.execute_script("arguments[0].value = '';", file_input)  # รีเซ็ต input file
+                driver.execute_script("arguments[0].value = '';", file_input)  # รีเซ็ต input file
 
-            print(f"พาธไฟล์ที่จะอัปโหลด: {file_path}")
-            file_input.send_keys(file_path)  # ใส่ไฟล์ลงใน input
-            time.sleep(5)  # รอให้ระบบประมวลผลไฟล์ก่อนคลิกปุ่มอัปโหลด
+                print(f"พาธไฟล์ที่จะอัปโหลด: {file_path}")
+                file_input.send_keys(file_path)  # ใส่ไฟล์ลงใน input
+                time.sleep(5)  # รอให้ระบบประมวลผลไฟล์ก่อนคลิกปุ่มอัปโหลด
 
-            # ใช้ JavaScript เพื่อคลิกปุ่มอัปโหลดแทน
-            upload_button = WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located(
-                    (By.XPATH, "//*[@id='mainContentPlaceHolder_eDocumentContentCreate1_AjaxFileUpload1_UploadOrCancelButton']")
+                # ใช้ JavaScript เพื่อคลิกปุ่มอัปโหลดแทน
+                upload_button = WebDriverWait(driver, 20).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, "//*[@id='mainContentPlaceHolder_eDocumentContentCreate1_AjaxFileUpload1_UploadOrCancelButton']")
+                    )
                 )
-            )
-            driver.execute_script("arguments[0].scrollIntoView(true);", upload_button)
-            driver.execute_script("arguments[0].click();", upload_button)  # คลิกผ่าน JavaScript
-            print(f"อัปโหลดไฟล์สำเร็จ: {file_path}")
+                driver.execute_script("arguments[0].scrollIntoView(true);", upload_button)
+                driver.execute_script("arguments[0].click();", upload_button)  # คลิกผ่าน JavaScript
+                print(f"อัปโหลดไฟล์สำเร็จ: {file_path}")
 
-            # เพิ่มไฟล์ในรายการที่อัปโหลดแล้ว
-            save_uploaded_file(file_path)
-            uploaded_count += 1  # เพิ่มตัวนับไฟล์ที่ถูกอัปโหลดในรอบนี้
-        except Exception as e:
-            print(f"เกิดข้อผิดพลาดในการอัปโหลดไฟล์ {file_path}: {e}")
+                uploaded_count += 1  # เพิ่มตัวนับไฟล์ที่ถูกอัปโหลดในรอบนี้
+            except Exception as e:
+                print(f"เกิดข้อผิดพลาดในการอัปโหลดไฟล์ {file_path}: {e}")
+
 
 finally:
     time.sleep(5)
     driver.quit()
-
-    if uploaded_count > 0:
-        print(f"อัปโหลดไฟล์ใหม่จำนวน {uploaded_count} ไฟล์สำเร็จ!")
-    else:
-        print("ไม่มีไฟล์ใหม่สำหรับอัปโหลด")
 
     # แสดงการแจ้งเตือนเมื่ออัปโหลดเสร็จสิ้น เฉพาะไฟล์ที่อัปโหลดในครั้งนี้
     if uploaded_count > 0:
