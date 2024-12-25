@@ -12,9 +12,9 @@ import time
 email = "pichai_jo"
 password = "CSautomation"
 
-# ตั้งค่า Firefox Options สำหรับดาวน์โหลดไฟล์ในโฟลเดอร์ Downloads
+# ตั้งค่า Firefox Options
 firefox_options = Options()
-firefox_options.set_preference("browser.download.folderList", 1)  # ใช้โฟลเดอร์ Downloads ของระบบ
+firefox_options.set_preference("browser.download.folderList", 1)  # ใช้โฟลเดอร์ Downloads
 firefox_options.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/pdf")  # ไม่ถามก่อนดาวน์โหลดไฟล์ PDF
 firefox_options.set_preference("pdfjs.disabled", True)  # ปิดการแสดง PDF ในเบราว์เซอร์
 
@@ -67,56 +67,33 @@ def check_for_user():
         print("เปลี่ยนไปยังแท็บ 'เอกสารที่ยังไม่ได้เปิดอ่าน'")
         time.sleep(5)
 
-        # ตรวจสอบว่าแท็บถูกเลือกสำเร็จ
-        try:
-            selected_tab = driver.find_element(By.XPATH, '/html/body/form/div[3]/div[2]/div[2]/div/div[2]/div[2]/div[2]/div/div[1]/ul/li[1]')
-            if 'active' in selected_tab.get_attribute("class"):
-                print("แท็บ 'เอกสารที่ยังไม่ได้เปิดอ่าน' ถูกเลือกสำเร็จ")
-            else:
-                print("แท็บ 'เอกสารที่ยังไม่ได้เปิดอ่าน' ไม่ถูกเลือก")
-        except Exception as e:
-            print(f"ไม่สามารถตรวจสอบสถานะของแท็บได้: {e}")
+        # ค้นหาคำว่า "นางสาวต้องใจ แย้มผกา" เฉพาะในองค์ประกอบที่กำหนด
+        target_xpath = '/html/body/form/div[3]/div[2]/div[2]/div/div[2]/div[2]/div[2]/div/div[2]/div[1]/div/div/div/div'
+        root_element = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, target_xpath))
+        )
+        print("พบองค์ประกอบที่ต้องการค้นหา!")
 
-        # ค้นหาคำว่า "นางสาวต้องใจ แย้มผกา" ในโซน "เอกสารที่ยังไม่ได้เปิดอ่าน"
-        found = False
-        while True:
-            print("กำลังค้นหาในหน้านี้...")
-            elements = driver.find_elements(By.XPATH, "//div[@id='mainContentPlaceHolder_eDocumentContentByDocumentDirectoryID1_gvData']//span[contains(text(), 'นางสาวต้องใจ แย้มผกา')]")
-            if elements:
-                print("พบ 'นางสาวต้องใจ แย้มผกา' ในหน้านี้!")
-                found = True
-                for element in elements:
-                    print("องค์ประกอบที่พบ:", element.get_attribute("outerHTML"))
-                break
+        # ค้นหาข้อความในองค์ประกอบ
+        elements = root_element.find_elements(By.XPATH, ".//*[contains(text(), 'นางสาวต้องใจ แย้มผกา')]")
 
-            # คลิกปุ่ม "ถัดไป" ถ้ามี
-            try:
-                next_button = WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentByDocumentDirectoryID1_gvData_postBackPager_ctl02"]'))
-                )
-                next_button.click()
-                print("คลิกปุ่มถัดไปสำเร็จ รอให้หน้าโหลดใหม่...")
-                WebDriverWait(driver, 10).until(EC.staleness_of(next_button))  # รอให้ปุ่มถัดไปหายไปจาก DOM (หน้าโหลดใหม่)
-                time.sleep(2)
-            except Exception:
-                print("ไม่มีปุ่มถัดไปแล้ว!")
-                break
-
-        # แจ้งเตือนผู้ใช้ (พบหรือไม่พบคำที่ต้องการ)
-        if found:
+        # ตรวจสอบผลลัพธ์
+        if elements:
+            print("พบ 'นางสาวต้องใจ แย้มผกา' ในองค์ประกอบที่ระบุ!")
+            for element in elements:
+                print("ข้อความที่พบ:", element.text)
             notification.notify(
                 title='คำเตือนจากระบบ',
-                message="⚠️ พบคำว่า 'นางสาวต้องใจ แย้มผกา' ในเอกสารที่ยังไม่ได้เปิดอ่าน!",
+                message="⚠️ พบคำว่า 'นางสาวต้องใจ แย้มผกา' ในองค์ประกอบที่ระบุ!",
                 timeout=10
             )
         else:
+            print("ไม่พบ 'นางสาวต้องใจ แย้มผกา' ในองค์ประกอบที่ระบุ")
             notification.notify(
                 title='ผลการตรวจสอบ',
-                message="❌ ไม่พบคำว่า 'นางสาวต้องใจ แย้มผกา' ในเอกสารที่ยังไม่ได้เปิดอ่าน",
+                message="❌ ไม่พบคำว่า 'นางสาวต้องใจ แย้มผกา' ในองค์ประกอบที่ระบุ",
                 timeout=10
             )
-        return found
-
     except Exception as e:
         print(f"เกิดข้อผิดพลาด: {e}")
         notification.notify(
@@ -124,9 +101,9 @@ def check_for_user():
             message=f"⚠️ เกิดข้อผิดพลาดระหว่างการทำงาน: {e}",
             timeout=10
         )
-        return False
     finally:
+        # ปิด WebDriver
         driver.quit()
 
-# เรียกใช้ฟังก์ชันตรวจสอบเพียงครั้งเดียว
+# เรียกใช้ฟังก์ชันตรวจสอบ
 check_for_user()
