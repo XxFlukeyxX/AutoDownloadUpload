@@ -15,28 +15,23 @@ if not exist "%PROCESSED_FILES%" (
 :loop
 echo กำลังตรวจสอบไฟล์ใหม่...
 
-REM สะสมรายชื่อไฟล์ใหม่ในตัวแปร
-set "new_files="
+REM Loop ผ่านไฟล์ PDF ใน DOC_FOLDER ที่ยังไม่ได้อยู่ใน PROCESSED_FILES
 for %%f in ("%DOC_FOLDER%\*.pdf") do (
     find "%%~nxf" "%PROCESSED_FILES%" >nul
     if errorlevel 1 (
         echo เจอไฟล์ใหม่: %%~nxf
-        set "new_files=!new_files! %%f"
-        REM เพิ่มชื่อไฟล์ลงใน PROCESSED_FILES ทันที
+        REM รัน finish-code-signature.py
+        python finish-code-signature.py "%%f"
+
+        REM รอ 3 วินาที
+        timeout /t 3 /nobreak >nul
+
+        REM รัน PDF_info_to_Web.py
+        python PDF_info_to_Web.py "%%f"
+
+        REM เพิ่มชื่อไฟล์ลงใน PROCESSED_FILES (บันทึกเป็น UTF-8)
         echo %%~nxf >> "%PROCESSED_FILES%"
     )
-)
-
-REM หากพบไฟล์ใหม่ให้รัน Python Script
-if defined new_files (
-    REM รัน finish-code-signature.py
-    python finish-code-signature.py !new_files!
-
-    REM รอ 3 วินาที
-    timeout /t 3 /nobreak >nul
-
-    REM รัน PDF_info_to_Web.py
-    python PDF_info_to_Web.py !new_files!
 )
 
 REM รอ 5 วินาทีก่อนตรวจสอบใหม่

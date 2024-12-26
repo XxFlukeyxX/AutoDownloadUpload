@@ -75,23 +75,23 @@ def check_for_user():
         print("พบองค์ประกอบที่ต้องการค้นหา!")
 
         # ค้นหาข้อความในองค์ประกอบ
-        elements = root_element.find_elements(By.XPATH, ".//*[contains(text(), 'นางสาวต้องใจ แย้มผกา')]")
+        elements = root_element.find_elements(By.XPATH, ".//*[contains(text(), 'นางสาวชนิสรา อ่ำสอาด')]")
 
         # ตรวจสอบผลลัพธ์
         if elements:
-            print("พบ 'นางสาวต้องใจ แย้มผกา' ในองค์ประกอบที่ระบุ!")
+            print("พบ 'นางสาวชนิสรา อ่ำสอาด' ในองค์ประกอบที่ระบุ!")
             for element in elements:
                 print("ข้อความที่พบ:", element.text)
             notification.notify(
                 title='คำเตือนจากระบบ',
-                message="⚠️ พบคำว่า 'นางสาวต้องใจ แย้มผกา' ในองค์ประกอบที่ระบุ!",
+                message="⚠️ พบคำว่า 'นางสาวชนิสรา อ่ำสอาด' ในองค์ประกอบที่ระบุ!",
                 timeout=10
             )
         else:
-            print("ไม่พบ 'นางสาวต้องใจ แย้มผกา' ในองค์ประกอบที่ระบุ")
+            print("ไม่พบ 'นางสาวชนิสรา อ่ำสอาด' ในองค์ประกอบที่ระบุ")
             notification.notify(
                 title='ผลการตรวจสอบ',
-                message="❌ ไม่พบคำว่า 'นางสาวต้องใจ แย้มผกา' ในองค์ประกอบที่ระบุ",
+                message="❌ ไม่พบคำว่า 'นางสาวชนิสรา อ่ำสอาด' ในองค์ประกอบที่ระบุ",
                 timeout=10
             )
     except Exception as e:

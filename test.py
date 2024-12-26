@@ -312,9 +312,24 @@ try:
         except Exception as e:
             print(f"เกิดข้อผิดพลาดในการอัปโหลดไฟล์ {file_path}: {e}")
 
+# หลังจากวนลูปการอัปโหลดไฟล์ทั้งหมด
 finally:
+    # คลิกปุ่ม Save and Sent
+    try:
+        save_and_sent_button = WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located(
+                (By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_bttSaveAndSent"]')
+            )
+        )
+        driver.execute_script("arguments[0].scrollIntoView(true);", save_and_sent_button)
+        driver.execute_script("arguments[0].click();", save_and_sent_button)  # คลิกผ่าน JavaScript
+        print("คลิกปุ่ม Save and Sent สำเร็จ")
+    except Exception as e:
+        print(f"เกิดข้อผิดพลาดในการกดปุ่ม Save and Sent: {e}")
+
     time.sleep(5)
     driver.quit()
+
 
     if uploaded_count > 0:
         print(f"อัปโหลดไฟล์ใหม่จำนวน {uploaded_count} ไฟล์สำเร็จ!")
