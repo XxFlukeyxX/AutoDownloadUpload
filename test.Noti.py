@@ -12,7 +12,7 @@ import time
 email = "pichai_jo"
 password = "CSautomation"
 line_token = "IbJu3fDcHwWbFXjLMCxaRUbSMtwtWeJClf39I5Yf2Je"
-reply_person = ["นางสาวต้องใจ แย้มผกา", "นายปฐมพงษ์ ริณพัฒน์", "นางสาวชนิสรา อ่ำสอาด"]
+reply_persons = ["นางสาวต้องใจ แย้มผกา", "นายปฐมพงษ์ ริณพัฒน์","นางสาวชนิสรา อ่ำสอาด"]
 
 # ตั้งค่า Firefox Options
 firefox_options = Options()
@@ -40,9 +40,7 @@ def send_line_notification(token, message):
     except requests.exceptions.RequestException as e:
         print(f"Error sending notification: {e}")
 
-
 # กำหนดข้อมูลผู้ตอบกลับเอกสาร
-reply_persons = ["นางสาวต้องใจ แย้มผกา", "นายปฐมพงษ์ ริณพัฒน์", "นางสาวชนิสรา อ่ำสอาด"]
 
 def check_for_user():
     try:
@@ -84,43 +82,41 @@ def check_for_user():
 
         # คลิกแท็บ "เอกสารที่ยังไม่ได้เปิดอ่าน"
         tab_unread = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, '/html/body/form/div[3]/div[2]/div[2]/div/div[2]/div[2]/div[2]/div/div[1]/ul/li[1]/a'))
+            EC.element_to_be_clickable((By.XPATH, '/html/body/form/div[3]/div[2]/div[2]/div/div[2]/div[2]/div[2]/div/div[1]/ul/li[2]/a/span'))
         )
         tab_unread.click()
         print("เปลี่ยนไปยังแท็บ 'เอกสารที่ยังไม่ได้เปิดอ่าน'")
         time.sleep(5)
 
         # ค้นหาคำในองค์ประกอบที่กำหนด
-        target_xpath = '/html/body/form/div[3]/div[2]/div[2]/div/div[2]/div[2]/div[2]/div/div[2]/div[1]/div/div/div/div'
+        target_xpath = '//*[@id="mainContentPlaceHolder_eDocumentContentByDocumentDirectoryID1_UpdatePanelData"]'
         root_element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, target_xpath))
         )
         print("พบองค์ประกอบที่ต้องการค้นหา!")
+                # ค้นหาชื่อใน reply_persons
+        for person in reply_persons:
+            try:
+                # ใช้ XPath ค้นหาชื่อ
+                person_element = root_element.find_element(By.XPATH, f".//*[contains(text(), '{person}')]")
+                if person_element:
+                    print(f"พบชื่อ: {person}")
 
-        
+                    # คลิกเข้าไปยังองค์ประกอบที่พบ
+                    person_element.click()
+                    print(f"คลิกเข้าไปยังชื่อ {person} สำเร็จ!")
+                    break  # หยุดเมื่อเจอชื่อที่ตรง
+            except Exception as e:
+                print(f"ไม่พบชื่อ {person} ในรายการนี้: {e}")
 
-        for reply_person in reply_persons:
-            # ค้นหาชื่อในองค์ประกอบ
-            elements = root_element.find_elements(By.XPATH, f".//*[contains(text(), '{reply_person}')]")
+        else:
+            print("ไม่พบชื่อใด ๆ ใน reply_persons")
 
-            # ตรวจสอบผลลัพธ์
-            if elements:
-                print(f"พบ '{reply_person}' ในองค์ประกอบที่ระบุ!")
-                for element in elements:
-                    print("ข้อความที่พบ:", element.text)
+        # ดำเนินการเพิ่มเติมหลังจากคลิก (ถ้าจำเป็น)
+        time.sleep(5)
 
-                message = f"พบการตอบกลับเอกสารจาก '{reply_person}' "
-                send_line_notification(line_token, message)
-
-    except Exception as e:
-        print(f"เกิดข้อผิดพลาด: {e}")
-
-        message = "เกิดข้อผิดพลาดระหว่างการทำงาน"
-        send_line_notification(line_token, message)
-    finally:
-        # ปิด WebDriver
-        driver.quit()
-
-# เรียกใช้ฟังก์ชันตรวจสอบ
+# เรียกใช้งานฟังก์ชัน
 check_for_user()
 
+# ปิด WebDriver
+driver.quit()

@@ -3,11 +3,14 @@ from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from webdriver_manager.firefox import GeckoDriverManager
 import os
+import requests
 import time
 
 # 🛠️ กำหนดข้อมูลผู้ใช้
 email = "pichai_jo"
 password = "CSautomation"
+person = "นางสาวต้องใจ แย้มผกา"
+line_token = "IbJu3fDcHwWbFXjLMCxaRUbSMtwtWeJClf39I5Yf2Je"
 
 # 🛠️ ตั้งค่า Firefox Options สำหรับดาวน์โหลดในโฟลเดอร์ Downloads
 firefox_options = Options()
@@ -18,6 +21,22 @@ firefox_options.set_preference("pdfjs.disabled", True)  # ปิดตัวแ�
 # 🛠️ สร้าง WebDriver
 service = Service(GeckoDriverManager().install())
 driver = webdriver.Firefox(service=service, options=firefox_options)
+
+def send_line_notification(token, message):
+    url = "https://notify-api.line.me/api/notify"
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    data = {
+        "message": message
+    }
+
+    try:
+        response = requests.post(url, headers=headers, data=data)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        print("Notification sent successfully!")
+    except requests.exceptions.RequestException as e:
+        print(f"Error sending notification: {e}")
 
 try:
     # 1️⃣ เปิดเว็บไซต์
@@ -59,7 +78,7 @@ try:
 
     rows = driver.find_elements("xpath", '//tr')
     for row in rows:
-        if "นางสาวต้องใจ แย้มผกา" in row.text.strip():
+        if "รายงานขอจัดซื้อจัดจ?าง" in row.text.strip():
             button = row.find_element("xpath", './/a')
             button.click()
             break
@@ -80,18 +99,23 @@ try:
     # 4️⃣ ค้นหาแถวที่มีชื่อ "นางสาวต้องใจ แย้มผกา"
     rows = driver.find_elements("xpath", '//tr')  # ดึงทุกแถวในตาราง
     for row in rows:
-        if "นางสาวต้องใจ แย้มผกา" in row.text:  # ตรวจสอบข้อความในแถว
+        if person in row.text:  # ตรวจสอบข้อความในแถว
             print(f"พบแถวที่มีชื่อ: {row.text}")
 
-            # 5️⃣ ค้นหาลิงก์ PDF ในแถวที่ตรงกับชื่อ
+        # ค้นหาลิงก์ PDF ในแถวที่ตรงกับชื่อ
             pdf_links = row.find_elements("xpath", './/a[contains(@href, "DocumentGenerateFile.ashx")]')
-            print(f"พบลิงก์ PDF ในแถวนี้: {len(pdf_links)}")
 
-            # 6️⃣ ดาวน์โหลดไฟล์ PDF ทีละลิงก์
+        # ตรวจสอบจำนวนลิงก์ PDF
+            if len(pdf_links) > 0:
+                print(f"พบลิงก์ PDF ในแถวนี้: {len(pdf_links)}")
+
+            # ดาวน์โหลดไฟล์ PDF ทีละลิงก์
             for index, pdf_link in enumerate(pdf_links):
                 pdf_url = pdf_link.get_attribute('href')  # ดึง URL ของไฟล์ PDF
                 if pdf_url not in downloaded_pdfs:  # ตรวจสอบว่าไฟล์ถูกดาวน์โหลดหรือยัง
                     try:
+                        # เลื่อนหน้าจอไปยังลิงก์ PDF ก่อนคลิก
+                        driver.execute_script("arguments[0].scrollIntoView(true);", pdf_link)
                         print(f"กำลังกดลิงก์ PDF ที่ {index + 1}: {pdf_url}")
                         pdf_link.click()  # คลิกลิงก์ PDF
                         downloaded_pdfs.add(pdf_url)  # บันทึกสถานะการดาวน์โหลด
@@ -100,9 +124,13 @@ try:
                         print(f"ไม่สามารถดาวน์โหลดไฟล์ PDF ที่ {index + 1}: {e}")
                 else:
                     print(f"ลิงก์ PDF นี้ถูกดาวน์โหลดไปแล้ว: {pdf_url}")
-
-    print("ดาวน์โหลดไฟล์ PDF ทีละแถวสำเร็จ!")
-
+                    message = f"พบการตอบกลับเอกสารจาก '{person}' ทำการดาวน์โหลดไฟล์ที่แนบมา\nจำนวนทั้งหมด {len(downloaded_pdfs)} ไฟล์"
+                    send_line_notification(line_token, message)
+        else:
+            # ไม่แสดงข้อความใดๆ หากไม่มีลิงก์ PDF
+            pass
+            
 finally:
     driver.quit()
     print("ปิด WebDriver เรียบร้อยแล้ว!")
+

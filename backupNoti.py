@@ -12,7 +12,7 @@ import time
 email = "pichai_jo"
 password = "CSautomation"
 line_token = "IbJu3fDcHwWbFXjLMCxaRUbSMtwtWeJClf39I5Yf2Je"
-reply_person = ["นางสาวต้องใจ แย้มผกา", "นายปฐมพงษ์ ริณพัฒน์", "นางสาวชนิสรา อ่ำสอาด"]
+reply_persons = ["นางสาวต้องใจ แย้มผกา", "นายปฐมพงษ์ ริณพัฒน์","นางสาวชนิสรา อ่ำสอาด"]
 
 # ตั้งค่า Firefox Options
 firefox_options = Options()
@@ -40,9 +40,7 @@ def send_line_notification(token, message):
     except requests.exceptions.RequestException as e:
         print(f"Error sending notification: {e}")
 
-
 # กำหนดข้อมูลผู้ตอบกลับเอกสาร
-reply_persons = ["นางสาวต้องใจ แย้มผกา", "นายปฐมพงษ์ ริณพัฒน์", "นางสาวชนิสรา อ่ำสอาด"]
 
 def check_for_user():
     try:
@@ -109,7 +107,7 @@ def check_for_user():
                 for element in elements:
                     print("ข้อความที่พบ:", element.text)
 
-                message = f"พบการตอบกลับเอกสารจาก '{reply_person}' "
+                message = f"พบการตอบกลับเอกสารจาก '{reply_person}'"
                 send_line_notification(line_token, message)
 
     except Exception as e:

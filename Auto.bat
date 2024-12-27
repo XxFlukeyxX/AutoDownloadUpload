@@ -37,6 +37,7 @@ if defined new_files (
 
     REM รัน PDF_info_to_Web.py
     python PDF_info_to_Web.py !new_files!
+    
 )
 
 REM รอ 5 วินาทีก่อนตรวจสอบใหม่

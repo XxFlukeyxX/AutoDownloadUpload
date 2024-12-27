@@ -11,15 +11,35 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.firefox import GeckoDriverManager
 import time
+import logging
 import json
-from plyer import notification
+import requests
 
 
 # 📧 เข้าสู่ระบบ
 email = "pichai_jo"
 password = "CSautomation"
+line_token = "IbJu3fDcHwWbFXjLMCxaRUbSMtwtWeJClf39I5Yf2Je"
 
 uploaded_files_record = "uploaded_files.json"
+
+
+def send_line_notification(token, message):
+    url = "https://notify-api.line.me/api/notify"
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    data = {
+        "message": message
+    }
+
+    try:
+        response = requests.post(url, headers=headers, data=data)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        print("Notification sent successfully!")
+    except requests.exceptions.RequestException as e:
+        print(f"Error sending notification: {e}")
+
 
 # โหลดรายการไฟล์ที่เคยอัปโหลด
 def load_uploaded_files():
@@ -35,14 +55,6 @@ def save_uploaded_file(file_path):
     with open(uploaded_files_record, "w", encoding="utf-8") as f:
         json.dump(list(uploaded_files), f, ensure_ascii=False, indent=4)  # บันทึกเป็น JSON
     print(f"บันทึกไฟล์ JSON เสร็จสิ้นที่: {os.path.abspath(uploaded_files_record)}")
-
-def show_notification(title, message):
-    notification.notify(
-        title=title,
-        message=message,
-        app_name="PDF Uploader",
-        timeout=10  # ระยะเวลาแสดงแจ้งเตือน (วินาที)
-    )
 
 # 📁 1️⃣ **ค้นหาไฟล์ทั้งหมดในโฟลเดอร์และโฟลเดอร์ย่อย**
 def get_files_in_subfolders(download_folder):
@@ -192,6 +204,10 @@ driver = webdriver.Firefox(service=service)
 try:
     driver.get("https://e-doc.rmutto.ac.th/home.aspx")
     time.sleep(5)
+    driver.maximize_window()
+    #driver.minimize_window()
+    #driver.set_window_size(400, 300)
+
 
     # คลิกที่ลิงก์แรก
     xpath_link = "/html/body/form/nav/div/div[2]/ul/li[2]/a"
@@ -239,27 +255,66 @@ try:
     save_button.click()
     time.sleep(2)
 
-    comment_link = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_gvDataFrom_gvDataFrom_linkComment_0"]')
+    comment_link = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_gvDataFrom_gvDataFrom_linkComment_1"]')
     comment_link.click()
     time.sleep(2)
 
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+
     sent_person_button = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentContentCreate1_bttPersonSent"]')
+    logging.info("Found the 'Sent Person' button.")
+
+# ใช้ JavaScript เลื่อน Scroll ไปที่ element
+    driver.execute_script("arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });", sent_person_button)
+    logging.info("Scrolled to the 'Sent Person' button.")
+
+# รอสักครู่เผื่อว่า element จะพร้อม
+    time.sleep(1)
+    logging.info("Waited for 1 second to ensure the element is ready.")
+
+# คลิกปุ่ม
     sent_person_button.click()
-    time.sleep(2)
+    logging.info("Clicked the    'Sent Person' button.")
 
-    sent_directory_add_button = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentDirectorySentTo1_bttDirectoryAdd"]')
+    time.sleep(5)
+    logging.info("Waited for 5 seconds after clicking the button.")
+
+    body_element = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '/html/body/form/div[3]/div[2]/div[3]/div/div/div[2]'))
+    )
+    print("Body element found.")
+
+# ดึงข้อความทั้งหมดจาก body
+    body_text = body_element.text
+    print("Text in the body:")
+    print(body_text)
+
+# หาและเลื่อนหน้าไปที่ปุ่ม
+    sent_directory_add_button = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentDirectorySentTo1_bttDirectoryAdd"]'))
+    )
+    print("Button element found. Scrolling to it.")
+
+# ใช้ JavaScript เพื่อเลื่อนหน้าไปยังปุ่ม
+    driver.execute_script("arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });", sent_directory_add_button)
+    print("Scrolled to the button.")
+
+# รอให้ปุ่มคลิกได้
+    sent_directory_add_button = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentDirectorySentTo1_bttDirectoryAdd"]'))
+    )
+    print("Button is clickable. Clicking the button.")
     sent_directory_add_button.click()
-    time.sleep(2)
-
+    print("Button clicked.")
    
     keyword_input = driver.find_element(By.XPATH, '//*[@id="mainContentPlaceHolder_eDocumentNotebook1_txtKeyword"]')
-    keyword_input.send_keys("นางสาวต้องใจ แย้มผกา")
+    keyword_input.send_keys("คณบดีคณะบริหารธุรกิจและเทคโนโลยีสารสนเทศ")
 
     additional_button = driver.find_element(By.XPATH, '/html/body/form/div[3]/div[2]/div[4]/div/div/div/div[2]/div/div/div/div[1]/div/div[2]/div/div/div/span/a/span')
     additional_button.click()
     time.sleep(2)
 
-    checkbox_xpath = "//tr[.//a[text()='นางสาวต้องใจ แย้มผกา']]//input[@type='checkbox']"
+    checkbox_xpath = "//tr[.//a[text()='คณบดีคณะบริหารธุรกิจและเทคโนโลยีสารสนเทศ']]//input[@type='checkbox']"
     checkbox_element = driver.find_element(By.XPATH, checkbox_xpath)
     checkbox_element.click()
     time.sleep(5)
@@ -323,8 +378,4 @@ finally:
 
     # แสดงการแจ้งเตือนเมื่ออัปโหลดเสร็จสิ้น เฉพาะไฟล์ที่อัปโหลดในครั้งนี้
     if uploaded_count > 0:
-        show_notification("การอัปโหลดเสร็จสิ้น", f"อัปโหลดไฟล์จำนวน {uploaded_count} ไฟล์เรียบร้อยแล้ว")
-    else:
-        show_notification("การอัปโหลดเสร็จสิ้น", "ไม่มีไฟล์ใหม่ถูกอัปโหลด")
-    print("การอัปโหลดเสร็จสิ้น")
-    
+        send_line_notification(line_token, f"อัปโหลดไฟล์จำนวน {uploaded_count} ไฟล์เรียบร้อยแล้ว")
